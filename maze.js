@@ -156,7 +156,7 @@ function loadWorld() {
 }
 
 var listener
-function initBox2d() {
+function init() {
     // listener = new b2d.JSContactListener();
     // listener.BeginContact = function (contactPtr) {
     //     var contact = b2d.wrapPointer( contactPtr, b2d.b2Contact )

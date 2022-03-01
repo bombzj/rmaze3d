@@ -6,7 +6,6 @@
         <meta name="keywords" content="Parking,Game"/>
         <title>Roling Maze</title>
     </head>
-    <script src="box2d_v2.2.1_min.js"></script>
     <script src="three.min.js"></script>
     <script src="cannon.min.js"></script>
     <script src="maze.js?v=3"></script>
@@ -106,15 +105,15 @@
 
     // var ballTexture
 
-    Box2D().then(function(Box2D) {
+    window.onload = function(Box2D) {
         // b2d = Box2D
-        initBox2d()
+        init()
         // ballTexture = PIXI.Texture.from('ball.png');
         resetLevel()
 
         requestAnimationFrame(loop)
         // app.ticker.add(loop);
-    })
+    }
 
     var lastTime;
     var lastTimeFps = 0
