@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui, maximum-scale=1.0, user-scalable=0">
+        <meta name="keywords" content="Parking,Game"/>
+        <title>Roling Maze</title>
+    </head>
+    <script src="box2d_v2.2.1_min.js"></script>
+    <script src="three.min.js"></script>
+    <script src="cannon.min.js"></script>
+    <script src="maze.js?v=3"></script>
+    <style>
+        button, select, label, input{
+            font-size:20px;
+        }
+    </style>
+    <body>
+        <div style="float:right;">
+            <p id="ccc"></p>
+            <p>
+                <button onclick="DeviceOrientationEvent.requestPermission()">ok</button>
+            </p>
+            <p>
+                <select id="selectLevel" onchange="changeLevel(this.value)"></select>
+            </p>
+            <p>
+                <label><input type="checkbox" onclick="toggleEdit(this.checked)" value="1">Edit</label>
+            </p>
+            <p>
+                <button onclick="clearEdit()">Clear</button>
+            </p>
+        </div>
+        <script type="text/javascript">
+           'use strict';
+            var beta = 0, gamma = 0
+
+            
+    var world = new CANNON.World()
+    world.gravity.set(0, 0, -9.82) // m/s²
+
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera( 65, 1, 10, 1000 )
+    // const camera = new THREE.OrthographicCamera( -400, 400, -400, 400, 10, 1000 )
+    const pivotCamera = new THREE.Object3D()
+    pivotCamera.add(camera)
+    scene.add( pivotCamera )
+
+    const renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize( 700, 700 )
+    renderer.shadowMap.enabled = true
+    // renderer.shadowMapSoft = true
+    // renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    document.body.appendChild( renderer.domElement );
+
+    let ambientLight = new THREE.AmbientLight( 0x606060 )
+    scene.add(ambientLight)
+
+    scene.background = new THREE.Color( 0xffffff )
+    const light = new THREE.SpotLight( 0xffffff, 0.99 )
+    light.position.set( -60, 120, 600 )
+    light.distance = 1000
+    light.decay = 1.2
+
+    light.castShadow = true
+    // light.shadow.camera.near = 10
+    // light.shadow.camera.far = 2500
+    // light.shadow.bias = 0.0001
+
+    light.shadow.mapSize.width = 1024
+    light.shadow.mapSize.height = 1024
+
+    pivotCamera.add( light )
+
+    // var demo = Example.wreckingBall()
+    // demo.engine.gravity.y = 0
+    // demo.engine.gravity.x = -3
+    var updateGravity = null
+    window.addEventListener('deviceorientation', function(e) {
+        if(world) {
+            if(e.beta != null) {
+                let a = Math.sin(e.gamma / 180 * Math.PI) * Math.cos(e.beta / 180 * Math.PI)
+                let b = -Math.sin(e.beta / 180 * Math.PI)
+                let c = Math.cos(e.gamma / 180 * Math.PI) * Math.cos(e.beta / 180 * Math.PI)
+                if(window.orientation) {
+                    let res = turn(a, b, window.orientation / 180 * Math.PI)
+                    a = res[0]
+                    b = res[1]
+                }
+                updateGravity = new THREE.Vector3(a, b, c)
+                updateGravity.normalize().multiplyScalar(9.82).negate()
+                // ccc.innerText = updateGravity.x + ' <br> ' + updateGravity.y + ' <br> ' + updateGravity.z + ' <br> '
+                // // let [a, b] = 
+                // let c = Math.sqrt(a*a + b*b) / 50
+                // if(c > 1) {
+                //     a /= c
+                //     b /= c
+                // }
+                // updateGravity = new b2d.b2Vec2(a, b)
+                
+                // demo.engine.gravity.x = a
+                // demo.engine.gravity.y = b
+            }
+        }
+    })
+
+    // var ballTexture
+
+    Box2D().then(function(Box2D) {
+        // b2d = Box2D
+        initBox2d()
+        // ballTexture = PIXI.Texture.from('ball.png');
+        resetLevel()
+
+        requestAnimationFrame(loop)
+        // app.ticker.add(loop);
+    })
+
+    var lastTime;
+    var lastTimeFps = 0
+    var fps = 0
+
+    function loop(dt) {
+        if(updateGravity) {
+            // world.SetGravity(updateGravity)
+            
+            world.gravity.set(updateGravity.x, updateGravity.y, updateGravity.z)
+            // ballSprite.body.SetAwake(true)
+            updateGravity = null
+        }
+
+        if(lastTime !== undefined){
+            var t = (dt - lastTime) / 1000;
+            world.step(1.0 / 60.0);
+        }
+        lastTime = dt;
+
+        if(dt < lastTimeFps) {
+            fps++
+        } else {
+            ccc.innerText = fps
+            fps = 0
+            lastTimeFps = dt + 1000
+        }
+        updateWorld()
+        renderer.render(scene, camera);
+        requestAnimationFrame(loop);
+    }
+
+    for(let [index, level] of levels.entries()) {
+        selectLevel.options.add(new Option('Level ' + (index+1), index));
+    }
+
+    function changeLevel(index) {
+        curLevel = index
+        level = levels[curLevel]
+        loadWorld()
+    }
+
+    function clearEdit() {
+        level.lines = null
+        level.holes2 = null
+        localStorage.removeItem("rmaze3"+curLevel);
+        loadWorld()
+    }
+
+    var ballSprite
+    var editMode = false
+    function toggleEdit(r) {
+        if(r) {
+            for(let ball of ballSprite) {
+                ball.visible = false
+            }
+        } else {
+            for(let ball of ballSprite) {
+                ball.visible = true
+            }
+        }
+        editMode = r
+    }
+
+
+        function turn(x, y, a) {
+            let sin = Math.sin(a)
+            let cos = Math.cos(a)
+            return [
+                -x * cos + y * sin,
+                -x * sin - y * cos,
+            ]
+        }
+
+        </script>
+    </body>
+</html>
