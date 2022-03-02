@@ -8,7 +8,7 @@
     </head>
     <script src="three.min.js"></script>
     <script src="cannon.min.js"></script>
-    <script src="maze.js?v=3"></script>
+    <script src="maze.js?v=4"></script>
     <style>
         button, select, label, input{
             font-size:20px;
@@ -29,6 +29,12 @@
             <p>
                 <button onclick="clearEdit()">Clear</button>
             </p>
+            <p>
+                <button onclick="turnMaze(1, 0)">&lt;</button> <button onclick="turnMaze(-1, 0)">&gt;</button>
+            </p>
+            <p>
+                <button onclick="turnMaze(0, 1)">up</button> <button onclick="turnMaze(0, -1)">down</button>
+            </p>
         </div>
         <script type="text/javascript">
            'use strict';
@@ -42,7 +48,9 @@
     const camera = new THREE.PerspectiveCamera( 65, 1, 10, 1000 )
     // const camera = new THREE.OrthographicCamera( -400, 400, -400, 400, 10, 1000 )
     const pivotCamera = new THREE.Object3D()
+    const pivotLight = new THREE.Object3D()
     pivotCamera.add(camera)
+    pivotCamera.add(pivotLight)
     scene.add( pivotCamera )
 
     const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -69,7 +77,7 @@
     light.shadow.mapSize.width = 1024
     light.shadow.mapSize.height = 1024
 
-    pivotCamera.add( light )
+    pivotLight.add( light )
 
     // var demo = Example.wreckingBall()
     // demo.engine.gravity.y = 0
@@ -78,16 +86,23 @@
     window.addEventListener('deviceorientation', function(e) {
         if(world) {
             if(e.beta != null) {
-                let a = Math.sin(e.gamma / 180 * Math.PI) * Math.cos(e.beta / 180 * Math.PI)
-                let b = -Math.sin(e.beta / 180 * Math.PI)
-                let c = Math.cos(e.gamma / 180 * Math.PI) * Math.cos(e.beta / 180 * Math.PI)
+                let beta = e.beta / 180 * Math.PI
+                let gamma = e.gamma / 180 * Math.PI
                 if(window.orientation) {
-                    let res = turn(a, b, window.orientation / 180 * Math.PI)
-                    a = res[0]
-                    b = res[1]
+                    let res = turn(gamma, beta, window.orientation / 180 * Math.PI)
+                    gamma = -res[0]
+                    beta = -res[1]
                 }
-                updateGravity = new THREE.Vector3(a, b, c)
-                updateGravity.normalize().multiplyScalar(9.82).negate()
+                let a = Math.sin(gamma) * Math.cos(beta)
+                let b = -Math.sin(beta)
+                let c = Math.cos(gamma) * Math.cos(beta)
+                
+                // updateGravity.normalize().multiplyScalar(9.82).negate()
+
+                pivotLight.rotation.set(beta, gamma, 0)
+
+                updateGravity = new THREE.Vector3(0, 0, -9.82)
+                pivotLight.localToWorld(updateGravity)
                 // ccc.innerText = updateGravity.x + ' <br> ' + updateGravity.y + ' <br> ' + updateGravity.z + ' <br> '
                 // // let [a, b] = 
                 // let c = Math.sqrt(a*a + b*b) / 50
@@ -113,6 +128,13 @@
 
         requestAnimationFrame(loop)
         // app.ticker.add(loop);
+    }
+
+    function turnMaze(x, y) {
+        x = x * Math.PI / 2
+        y = y * Math.PI / 2
+        pivotCamera.rotateX(y)
+        pivotCamera.rotateY(x)
     }
 
     var lastTime;

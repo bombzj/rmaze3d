@@ -1,5 +1,5 @@
 
-var b2d, world, phyScale = 100
+var b2d, world, phyScale = 500
 var myQueryCallback
 var mouseJointGroundBody
 const wallColor = 0x2EF2AA
