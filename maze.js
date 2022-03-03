@@ -3,6 +3,7 @@ var b2d, world, phyScale = 500
 var myQueryCallback
 var mouseJointGroundBody
 const wallColor = 0x2EF2AA
+let r90 = Math.PI / 2
 
 function loadWorld() {
     // if(world) {
@@ -34,12 +35,6 @@ function loadWorld() {
     camera.position.set(-00, -00, 800)
     camera.lookAt(0,0,0)
 
-    const geometry = new THREE.SphereGeometry( 2, 16, 8 );
-    const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-    const sphere = new THREE.Mesh( geometry, material );
-    sphere.position.set(0, 0, 0)
-    scene.add( sphere );
-
     // debug
     // level.ball.x = level.debug.x
     // level.ball.y = level.debug.y
@@ -48,7 +43,6 @@ function loadWorld() {
     // addWall(wallLeft + level.column * wallLength/2, wallTop + level.row * wallLength, level.column * wallLength, wallWidth)
     // addWall(wallLeft + level.column * wallLength, wallTop + level.row * wallLength/2, wallWidth, level.row * wallLength)
     // addWall(wallLeft, wallTop + level.row * wallLength/2, wallWidth, level.row * wallLength)
-    let r90 = Math.PI / 2
     let rotates = [
         [1, 0, 0, 0],
         [0, 1, 0, -r90],
@@ -84,20 +78,24 @@ function loadWorld() {
             for(let j = 0;j < floor2.length;j++) {
                 if(floor2[j] == 1) {
                     parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
+                } else if(floor2[j] == 2) {
+                    parent.add(addWallHole(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
+                } else if(floor2[j] == 3) {
+                    parent.add(addWallHole(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
+                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall-wallLength/2, wallLength, wallLength, wallWidth, undefined, false, true))
                 }
             }
         }
 
         parent.add(addWall(0, 0, tlenh+wallLength, tlen, tlen, wallWidth, 0xffffff, false, false, 0.3))
 
-        let holes = level.holes
-        for(let hole of holes) {
-            let x = hole[0]
-            let y = hole[1]
-            let cylinder = addHole(wallLeft + (x+0.5) * wallLength, -wallTop - (y+0.5) * wallLength, tlenh+explodeWall, wallWidth+5, wallLength / 2.7)
-            cylinder.rotateX(r90)
-            parent.add(cylinder)
-        }
+        // let holes = level.holes
+        // for(let hole of holes) {
+        //     let x = hole[0]
+        //     let y = hole[1]
+        //     let cylinder = addHole(wallLeft + (x+0.5) * wallLength, -wallTop - (y+0.5) * wallLength, tlenh+explodeWall, wallWidth+5, wallLength / 2.7)
+        //     parent.add(cylinder)
+        // }
 
         let r = rotates[sid]
         if(r[4]) {
@@ -282,15 +280,6 @@ function addHiddenWall(x, y, z, w, h, d) {
 }
 
 function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false, opacity = 1) {
-    // let shape = new b2d.b2PolygonShape()
-    // shape.SetAsBox(w/phyScale/2, h/phyScale/2)
-    // let bd = new b2d.b2BodyDef()
-    // bd.set_position(new b2d.b2Vec2(x/phyScale, y/phyScale))
-    // let body = world.CreateBody(bd)
-    // let fx = body.CreateFixture(shape, 5.0)
-    // fx.isExit = false
-
-
     const geometry = new THREE.BoxGeometry( w, h, d )
     const material = new THREE.MeshPhongMaterial( {color: color} )
     const box = new THREE.Mesh( geometry, material )
@@ -308,6 +297,31 @@ function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiv
     return box
 }
 
+function addWallHole(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false) {
+    const geometry = new THREE.BoxGeometry( w, h, d )
+    const box = new THREE.Mesh( geometry )
+
+    const size = wallLength / 2.7
+    const geometry2 = new THREE.CylinderGeometry( size, size, 2*d+0.1, 16 )
+    const cy = new THREE.Mesh( geometry2 )
+    cy.rotateX(r90)
+
+    box.updateMatrix()
+    cy.updateMatrix()
+    let bspA = CSG.fromMesh( box )
+    let bspB = CSG.fromMesh( cy )
+    let bspC = bspA.subtract( bspB )
+    let result = CSG.toMesh( bspC, box.matrix )
+    result.material = new THREE.MeshPhongMaterial( {color: color} )
+    result.position.set(x, y, z)
+    if(castShadow) {
+        result.castShadow = true
+    }
+    if(receiveShadow) {
+        result.receiveShadow = true
+    }
+    return result
+}
 
 function addLineWall(pos1, pos2) {
     let x = pos1.x, y = pos1.y
@@ -344,9 +358,10 @@ function addHole(x, y, z, d, size, color = 0x0) {
 
     const geometry = new THREE.CylinderGeometry( size, size, d, 16 )
     const material = new THREE.MeshPhongMaterial( {color: color} )
-    const box = new THREE.Mesh( geometry, material )
-    box.position.set( x, y, z )
-    return box
+    const cy = new THREE.Mesh( geometry, material )
+    cy.rotateX(r90)
+    cy.position.set( x, y, z )
+    return cy
 
     // var ball = new PIXI.Graphics()
     // ball.beginFill(0x0F4F36)
@@ -436,11 +451,11 @@ var levels = [
         floor: [
             [1,1,1,1,0,1,1,1,],
             [1,1,1,1,1,1,1,1,],
-            [0,1,1,1,1,1,1,1,],
+            [0,1,2,1,1,1,1,1,],
             [1,1,1,1,1,1,1,1,],
             [1,1,1,1,1,1,1,0,],
             [1,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
+            [1,1,1,1,1,1,2,1,],
             [1,1,0,0,1,1,1,1,],
         ],
         holes: [
@@ -474,10 +489,10 @@ var levels = [
         floor: [
             [0,1,1,1,1,1,1,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,1,],
+            [0,1,2,1,1,1,1,1,],
             [1,1,1,1,1,1,1,0,],
-            [1,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
+            [1,1,1,1,2,1,1,0,],
+            [0,1,1,2,1,1,1,0,],
             [0,1,1,1,1,1,1,0,],
             [0,0,0,0,0,0,0,0,],
         ],
@@ -513,10 +528,10 @@ var levels = [
         floor: [
             [0,0,0,0,0,0,0,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
-            [1,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
+            [0,1,1,2,1,1,1,0,],
+            [0,1,2,1,1,1,1,0,],
+            [1,1,1,1,2,1,1,1,],
+            [1,1,2,1,1,1,1,1,],
             [0,1,1,1,1,1,1,0,],
             [0,1,1,1,1,1,0,0,],
         ],
@@ -553,10 +568,10 @@ var levels = [
         floor: [
             [0,1,1,1,1,1,0,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
+            [0,1,2,1,2,1,1,0,],
             [0,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
-            [0,1,1,1,1,1,1,0,],
+            [1,1,1,2,1,1,2,1,],
+            [0,1,1,1,2,1,1,0,],
             [0,1,1,1,1,1,1,0,],
             [0,0,0,0,0,0,0,0,],
         ],
@@ -593,11 +608,11 @@ var levels = [
         floor: [
             [0,0,0,0,0,0,0,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
+            [0,2,1,2,1,2,1,0,],
             [0,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,0,],
+            [1,1,1,1,2,1,1,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
+            [0,1,1,1,2,1,1,0,],
             [0,0,1,1,1,1,1,0,],
         ],
         holes: [
@@ -632,11 +647,11 @@ var levels = [
         ],
         floor: [
             [1,1,1,1,0,1,1,1,],
+            [1,3,1,1,1,1,2,1,],
             [1,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
+            [1,2,1,1,1,2,1,1,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,1,1,1,1,1,0,],
+            [0,1,1,2,1,1,1,0,],
             [1,1,1,1,1,1,1,1,],
             [1,1,1,0,0,1,1,1,],
         ],

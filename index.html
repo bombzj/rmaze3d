@@ -8,7 +8,14 @@
     </head>
     <script src="three.min.js"></script>
     <script src="cannon.min.js"></script>
-    <script src="maze.js?v=4"></script>
+    <script src="maze.js?v=5"></script>
+    <!-- <script type='module' src="csg-lib.js"></script> -->
+    <script src="csg-lib.js"></script>
+    <script src="three-csg.js"></script>
+
+    </script>
+
+    <!-- <script type='module' src="three-csg.js"></script> -->
     <style>
         button, select, label, input{
             font-size:20px;
@@ -36,7 +43,7 @@
                 <button onclick="turnMaze(0, 1)">up</button> <button onclick="turnMaze(0, -1)">down</button>
             </p>
         </div>
-        <script type="text/javascript">
+        <script>
            'use strict';
             var beta = 0, gamma = 0
 
@@ -45,8 +52,8 @@
     world.gravity.set(0, 0, -9.82) // m/s²
 
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera( 65, 1, 10, 1000 )
-    // const camera = new THREE.OrthographicCamera( -400, 400, -400, 400, 10, 1000 )
+    const camera = new THREE.PerspectiveCamera( 60, 1, 10, 2000 )
+    // const camera = new THREE.OrthographicCamera( -400, 400, 400, -400, 10, 2000 )
     const pivotCamera = new THREE.Object3D()
     const pivotLight = new THREE.Object3D()
     pivotCamera.add(camera)
@@ -54,7 +61,7 @@
     scene.add( pivotCamera )
 
     const renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize( 700, 700 )
+    renderer.setSize( 600, 600 )
     renderer.shadowMap.enabled = true
     // renderer.shadowMapSoft = true
     // renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -152,7 +159,7 @@
 
         if(lastTime !== undefined){
             var t = (dt - lastTime) / 1000;
-            world.step(1.0 / 60.0);
+            world.step(1.0 / 60.0, t);
         }
         lastTime = dt;
 
