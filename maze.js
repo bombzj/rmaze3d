@@ -4,6 +4,7 @@ var myQueryCallback
 var mouseJointGroundBody
 const wallColor = 0x2EF2AA
 let r90 = Math.PI / 2
+let wireframe = false
 
 function loadWorld() {
     // if(world) {
@@ -32,8 +33,8 @@ function loadWorld() {
     wallLeft = -tlen / 2
     wallTop = -tlen / 2
     // camera.position.set(tlen/2, -tlen/2, 500)
-    camera.position.set(-00, -00, 800)
-    camera.lookAt(0,0,0)
+    // camera.position.set(-00, -00, 1600)
+    // camera.lookAt(0,0,0)
 
     // debug
     // level.ball.x = level.debug.x
@@ -59,7 +60,7 @@ function loadWorld() {
             let wall2 = level.wallH[i]
             for(let j = 0;j < wall2.length;j++) {
                 if(wall2[j] == 1) {
-                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i+1) * wallLength, wallLength/2+tlenh+explodeWall, wallLength, wallWidth, wallDepth, undefined, true, false))
+                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i+1) * wallLength, wallLength/2+tlenh+explodeWall, wallLength, wallWidth, wallDepth, undefined, true, true))
                 }
             }
         }
@@ -68,7 +69,7 @@ function loadWorld() {
             let wall2 = level.wallV[i]
             for(let j = 0;j < wall2.length;j++) {
                 if(wall2[j] == 1) {
-                    parent.add(addWall(wallLeft + (j+1) * wallLength, -wallTop - (i + 0.5) * wallLength, wallLength/2+tlenh+explodeWall, wallWidth, wallLength, wallDepth, undefined, true, false))
+                    parent.add(addWall(wallLeft + (j+1) * wallLength, -wallTop - (i + 0.5) * wallLength, wallLength/2+tlenh+explodeWall, wallWidth, wallLength, wallDepth, undefined, true, true))
                 }
             }
         }
@@ -76,24 +77,40 @@ function loadWorld() {
         for(let i = 0;i < level.floor.length;i++) {
             let floor2 = level.floor[i]
             for(let j = 0;j < floor2.length;j++) {
-                if(floor2[j] == 1) {
-                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
-                } else if(floor2[j] == 2) {
-                    parent.add(addWallHole(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
-                } else if(floor2[j] == 3) {
-                    parent.add(addWallHole(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall, wallLength, wallLength, wallWidth, undefined, false, true))
-                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh+explodeWall-wallLength/2, wallLength, wallLength, wallWidth, undefined, false, true))
+                console.log()
+                let v = floor2[j]
+                if(v == 2 || v == 3) v = [v, 1, 1]
+                if(typeof v ==='object') {
+                    let x = wallLeft + (j + v[1] / 2) * wallLength
+                    let y = -wallTop - (i + v[2] / 2) * wallLength
+                    let z = tlenh
+                    let z2 = tlenh
+                    let l = wallLength * v[1]
+                    let w = wallLength * v[2]
+                    let d = wallWidth
+                    let d2 = wallWidth*2+0.1
+                    if(v[0] == 2) { // hole
+                        
+                    } else if(v[0] == 3) {   // exit
+                        z = z-wallLength/2+wallWidth/2
+                        z2 = z + wallLength/2
+                        d = wallLength
+                        d2 = wallLength
+                    }
+                    parent.add(addWallHole(x, y, z, z2, l, w, d, d2, undefined, false, true))
+                } else if(v == 1) {
+                    parent.add(addWall(wallLeft + (j+0.5) * wallLength, -wallTop - (i + 0.5) * wallLength, tlenh, wallLength, wallLength, wallWidth, undefined, false, true))
                 }
             }
         }
 
-        parent.add(addWall(0, 0, tlenh+wallLength, tlen, tlen, wallWidth, 0xffffff, false, false, 0.3))
+        parent.add(addWall(0, 0, tlenh+wallLength+wallWidth, tlen, tlen, wallWidth, 0xffffff, false, false, 0.3))
 
         // let holes = level.holes
         // for(let hole of holes) {
         //     let x = hole[0]
         //     let y = hole[1]
-        //     let cylinder = addHole(wallLeft + (x+0.5) * wallLength, -wallTop - (y+0.5) * wallLength, tlenh+explodeWall, wallWidth+5, wallLength / 2.7)
+        //     let cylinder = addHole(wallLeft + (x+0.5) * wallLength, -wallTop - (y+0.5) * wallLength, tlenh, wallWidth+5, wallLength / 2.7)
         //     parent.add(cylinder)
         // }
 
@@ -281,7 +298,7 @@ function addHiddenWall(x, y, z, w, h, d) {
 
 function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false, opacity = 1) {
     const geometry = new THREE.BoxGeometry( w, h, d )
-    const material = new THREE.MeshPhongMaterial( {color: color} )
+    const material = new THREE.MeshPhongMaterial( {color: color, wireframe: wireframe} )
     const box = new THREE.Mesh( geometry, material )
     box.position.set( x, y, z )
     if(castShadow) {
@@ -297,13 +314,14 @@ function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiv
     return box
 }
 
-function addWallHole(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false) {
+function addWallHole(x, y, z, z2, w, h, d, d2, color = wallColor, castShadow = false, receiveShadow = false) {
     const geometry = new THREE.BoxGeometry( w, h, d )
     const box = new THREE.Mesh( geometry )
 
     const size = wallLength / 2.7
-    const geometry2 = new THREE.CylinderGeometry( size, size, 2*d+0.1, 16 )
+    const geometry2 = new THREE.CylinderGeometry( size, size, d2, 16 )
     const cy = new THREE.Mesh( geometry2 )
+    cy.position.z = z2 - z
     cy.rotateX(r90)
 
     box.updateMatrix()
@@ -312,7 +330,7 @@ function addWallHole(x, y, z, w, h, d, color = wallColor, castShadow = false, re
     let bspB = CSG.fromMesh( cy )
     let bspC = bspA.subtract( bspB )
     let result = CSG.toMesh( bspC, box.matrix )
-    result.material = new THREE.MeshPhongMaterial( {color: color} )
+    result.material = new THREE.MeshPhongMaterial( {color: color, wireframe: wireframe} )
     result.position.set(x, y, z)
     if(castShadow) {
         result.castShadow = true
@@ -442,8 +460,8 @@ var levels = [
             [0,1,0,0,0,0,1,],
             [0,0,0,0,0,0,0,],
             [0,1,1,0,0,0,1,],
-            [0,1,0,0,0,0,1,],
-            [1,0,0,0,0,0,1,],
+            [0,1,0,0,0,0,0,],
+            [1,0,0,0,0,0,0,],
             [1,1,0,0,1,0,0,],
             [1,0,1,0,0,0,1,],
             [0,0,0,0,0,0,0,],
@@ -451,11 +469,11 @@ var levels = [
         floor: [
             [1,1,1,1,0,1,1,1,],
             [1,1,1,1,1,1,1,1,],
-            [0,1,2,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,1,],
+            [0,1,[2, 1, 2],1,1,1,1,1,],
+            [1,1,0,1,1,1,1,0,],
             [1,1,1,1,1,1,1,0,],
             [1,1,1,1,1,1,1,1,],
-            [1,1,1,1,1,1,2,1,],
+            [1,1,1,1,1,1,[2, 1, 1],1,],
             [1,1,0,0,1,1,1,1,],
         ],
         holes: [
@@ -480,7 +498,7 @@ var levels = [
             [0,0,0,1,0,1,0,],
             [0,0,0,1,0,0,0,],
             [0,1,0,0,1,0,0,],
-            [0,1,0,0,0,0,1,],
+            [0,1,0,0,0,0,0,],
             [1,0,0,0,0,0,0,],
             [0,0,0,0,0,0,0,],
             [0,1,0,0,0,1,0,],
@@ -489,10 +507,10 @@ var levels = [
         floor: [
             [0,1,1,1,1,1,1,0,],
             [0,1,1,1,1,1,1,0,],
-            [0,1,2,1,1,1,1,1,],
-            [1,1,1,1,1,1,1,0,],
-            [1,1,1,1,2,1,1,0,],
-            [0,1,1,2,1,1,1,0,],
+            [0,1,[2, 1, 2],1,1,1,1,1,],
+            [1,1,0,1,1,1,1,0,],
+            [1,1,1,1,[2, 2, 1],0,1,0,],
+            [0,1,1,[2, 2, 1],0,1,1,0,],
             [0,1,1,1,1,1,1,0,],
             [0,0,0,0,0,0,0,0,],
         ],
@@ -561,8 +579,8 @@ var levels = [
             [0,0,0,1,1,0,0,],
             [0,0,1,0,1,0,0,],
             [0,0,0,1,0,0,1,],
-            [0,1,0,0,1,0,1,],
-            [0,0,1,0,0,1,1,],
+            [0,1,0,0,1,0,0,],
+            [0,0,1,0,0,1,0,],
             [0,0,0,0,0,0,0,],
         ],
         floor: [
@@ -647,8 +665,8 @@ var levels = [
         ],
         floor: [
             [1,1,1,1,0,1,1,1,],
-            [1,3,1,1,1,1,2,1,],
-            [1,1,1,1,1,1,1,1,],
+            [1,[3, 2, 2],0,1,1,1,2,1,],
+            [1,0,0,1,1,1,1,1,],
             [1,2,1,1,1,2,1,1,],
             [0,1,1,1,1,1,1,0,],
             [0,1,1,2,1,1,1,0,],
@@ -664,198 +682,12 @@ var levels = [
         ball: [{x: 7, y: 5}],
         exit: {x: 1.5, y: 1.5},
     }, 
-    {       // 7
-        wallH: [
-            [0,0,0,0,0,0,0,0,],
-            [0,0,0,0,1,0,0,0,],
-            [0,0,0,0,0,0,0,0,],
-            [0,0,0,0,0,0,0,0,],
-            [0,1,1,1,0,1,1,0,],
-            [0,0,0,0,0,0,0,1,],
-            [0,0,0,0,0,0,0,0,],
-        ],
-        wallV: [
-            [1,0,0,0,0,0,0,],
-            [1,0,0,1,0,0,0,],
-            [1,0,0,0,1,0,0,],
-            [1,0,0,0,1,0,0,],
-            [1,0,0,0,1,0,0,],
-            [0,0,1,0,1,0,0,],
-            [0,0,0,0,1,0,0,],
-            [0,0,0,0,1,0,0,],
-        ],
-        holes: [
-            [1,0],
-            [5,0],
-            [3,1],
-            [6,1],
-            [2,2],
-            [7,2],
-            [5,3],
-            [7,3],
-            [1,4],
-            [3,4],
-            [0,6],
-            [2,6],
-            [4,6],
-            [6,6],
-            [0,7],
-        ],
-        ball: [{x: 7, y: 7}],
-        exit: {x: 0, y: 0},
-    }, 
-    {       // 8
-        wallH: [
-            [0,0,0,0,0,0,0,0,],
-            [0,0,0,0,0,1,1,0,],
-            [1,1,1,1,1,0,0,0,],
-            [0,0,0,0,0,0,0,0,],
-            [0,0,0,0,0,1,1,0,],
-            [0,0,0,0,0,1,0,0,],
-            [1,0,0,0,0,0,0,0,],
-        ],
-        wallV: [
-            [0,0,0,1,0,0,0,],
-            [0,0,0,1,0,0,0,],
-            [0,0,0,0,1,0,0,],
-            [0,0,0,0,1,0,0,],
-            [0,0,0,0,1,0,0,],
-            [0,1,0,0,1,0,0,],
-            [0,1,0,0,0,0,0,],
-            [0,1,0,0,1,0,0,],
-        ],
-        holes: [
-
-            [0,0],
-            [7,0],
-            [2,1],
-            [5,1],
-            [1,2],
-            [5,2],
-            [0,3],
-            [7,3],
-            [2,4],
-            [4,4],
-            [5,4],
-            [1,5],
-            [3,6],
-            [6,6],
-            [4,7],
-        ],
-        ball: [{x: 0, y: 7}],
-        exit: {x: 0, y: 2.4},
-    }, 
-    {       // 9
-        wallH: [
-            [0,0,0,0,1,1,1,0],
-            [0,0,0,0,0,1,0,0],
-            [0,0,1,0,0,0,0,1],
-            [0,0,1,1,0,0,1,0],
-            [0,0,0,0,0,1,0,1],
-            [0,1,1,0,0,0,0,0],
-            [1,0,1,0,1,0,0,0],
-        ],
-        wallV: [
-            [0,0,0,0,0,0,0],
-            [1,0,0,1,0,0,0],
-            [1,1,0,0,0,1,1],
-            [0,0,0,0,1,1,0],
-            [0,0,0,1,0,0,0],
-            [0,0,0,1,0,0,1],
-            [1,0,0,0,1,1,0],
-            [0,0,1,0,0,0,0],
-        ],
-        holes: [
-            [0,0],
-            [0,2],
-            [2,1],
-            [3,3],
-            [4,3],
-            [5,0],
-            [5,2],
-            [7,1],
-            [1,4],
-            [3,4],
-            [6,5],
-            [4,6],
-            [2,7],
-            [3,7],
-            [7,7],
-        ],
-        ball: [{x: 0, y: 7}],
-        exit: {x: 7.4, y: 5},
-    }, 
-
-    {       // 10
-        wallH: [
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-        ],
-        wallV: [
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-        ],
-        holes: [
-        ],
-        ball: [
-            {x: 0, y: 0},
-            {x: 0, y: 1},
-        ],
-        exit: {x: 11.4, y: 9},
-    }, 
-    {       // 11
-        wallH: [
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0],
-        ],
-        wallV: [
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-        ],
-        holes: [
-        ],
-        ball: [
-            {x: 0, y: 0},
-            {x: 0, y: 1},
-        ],
-        exit: {x: 11.4, y: 9},
-    }, 
 ]
 
 var wallLength = 60, wallWidth = 4, wallDepth = 60
 var wallLeft = 0, wallTop = 0
 var initLevel = 0
-var explodeWall = 0
+var explodeWall = -1
 
 
 
@@ -864,6 +696,7 @@ var mouseDown = false
 var mouseJoint = null
 var lineSteps = []
 function onMouseDown(pos) {
+    if(!level) return
     if(pos.x < wallLeft || pos.y < wallTop
         || pos.x > wallLeft + level.column * wallLength || pos.y > wallTop + level.row * wallLength) {
             return
@@ -889,6 +722,7 @@ function onMouseDown(pos) {
 var lineSpirit
 
 function onMouseMove(pos) {
+    if(!level) return
     if(pos.x < wallLeft || pos.y < wallTop
         || pos.x > wallLeft + level.column * wallLength || pos.y > wallTop + level.row * wallLength) {
             return
