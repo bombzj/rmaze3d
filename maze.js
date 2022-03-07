@@ -121,20 +121,39 @@ function loadWorld() {
         let pos = new THREE.Vector3()
         let quat = new THREE.Quaternion()
         parent.rotateOnWorldAxis(new THREE.Vector3(r[0], r[1], r[2]), r[3])
+
+        let boxes = []
         for(let c of parent.children) {
             let g = c.geometry
             if(g.type == 'BoxGeometry') {
                 c.getWorldPosition(pos)
                 c.getWorldQuaternion(quat)
-                var boxBody = new CANNON.Body({
-                    mass: 0,
-                    position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
-                    shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
-                    quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
-                 });
-                 world.addBody(boxBody);
+                boxes.push({type: 'box',
+                pos: {
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                }, quat: {
+                    x: quat.x,
+                    y: quat.y,
+                    z: quat.z,
+                    w: quat.w,
+                }, shape: {
+                    width: g.parameters.width/2,
+                    height: g.parameters.height/2,
+                    depth: g.parameters.depth/2,
+                }})
+                // var boxBody = new CANNON.Body({
+                //     mass: 0,
+                //     position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
+                //     shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
+                //     quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
+                //  });
+                //  world.addBody(boxBody);
             }
         }
+
+        worker.postMessage({type: 'updateMaze', payload: boxes})
     }
 
 
@@ -255,30 +274,12 @@ function resetLevel() {
 
 
 function addBall(x, y, z, r) {
-    // let shape = new b2d.b2CircleShape();
-    // shape.set_m_radius(r/phyScale);
-
-    // let bd = new b2d.b2BodyDef();
-    // bd.set_type(b2d.b2_dynamicBody)
-    // bd.set_position(new b2d.b2Vec2(x/phyScale , y/phyScale))
-    // bd.allowSleep = false
-    // // bd.set_friction(0.1)
-    // let body = world.CreateBody(bd)
-    // let fx = body.CreateFixture(shape, 10.0)
-    // fx.isBall = true
-    // fx.SetRestitution(0.25)
-    // body.SetAwake(true)
-    var sphereBody = new CANNON.Body({
-        mass: 5, // kg
-        position: new CANNON.Vec3(x/phyScale, y/phyScale, z/phyScale), // m
-        shape: new CANNON.Sphere(r/phyScale)
-     });
-     world.addBody(sphereBody);
+    worker.postMessage({type: 'addBall', payload: {x: x, y: y, z: z, r: r}})
 
     const geometry = new THREE.SphereGeometry( r, 32, 16 );
     const material = new THREE.MeshPhongMaterial( { color: 0xAAAAAA, specular: 0x666666, shininess: 100 } );
     const sphere = new THREE.Mesh( geometry, material );
-    sphere.body = sphereBody
+    // sphere.body = sphereBody
     sphere.position.set(x, y, z)
     sphere.castShadow = true
     scene.add( sphere )
@@ -287,13 +288,13 @@ function addBall(x, y, z, r) {
 }
 
 function addHiddenWall(x, y, z, w, h, d) {
-    var boxBody = new CANNON.Body({
-        mass: 0,
-        position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
-        shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
-        quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
-    });
-    world.addBody(boxBody);
+    // var boxBody = new CANNON.Body({
+    //     mass: 0,
+    //     position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
+    //     shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
+    //     quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
+    // });
+    // world.addBody(boxBody);
 }
 
 function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false, opacity = 1) {
@@ -342,16 +343,16 @@ function addWallHole(x, y, z, z2, w, h, d, d2, color = wallColor, castShadow = f
 }
 
 function addLineWall(pos1, pos2) {
-    let x = pos1.x, y = pos1.y
-    let x2 = pos2.x, y2 = pos2.y
-    let dx = x2 - x, dy = y2 - y
-    let shape = new b2d.b2EdgeShape()
-    shape.Set(new b2d.b2Vec2(0, 0), new b2d.b2Vec2(dx/phyScale, dy/phyScale))
-    let bd = new b2d.b2BodyDef()
-    bd.set_position(new b2d.b2Vec2(x/phyScale, y/phyScale))
-    let body = world.CreateBody(bd)
-    let fx = body.CreateFixture(shape, 5.0)
-    fx.isExit = false
+    // let x = pos1.x, y = pos1.y
+    // let x2 = pos2.x, y2 = pos2.y
+    // let dx = x2 - x, dy = y2 - y
+    // let shape = new b2d.b2EdgeShape()
+    // shape.Set(new b2d.b2Vec2(0, 0), new b2d.b2Vec2(dx/phyScale, dy/phyScale))
+    // let bd = new b2d.b2BodyDef()
+    // bd.set_position(new b2d.b2Vec2(x/phyScale, y/phyScale))
+    // let body = world.CreateBody(bd)
+    // let fx = body.CreateFixture(shape, 5.0)
+    // fx.isExit = false
 }
 
 function addExit(x, y, w, h) {
@@ -409,34 +410,35 @@ function updateWorld() {
             let dir = new THREE.Vector3()
             camera.getWorldDirection(dir)
             dir.multiplyScalar(9.82)
-            world.gravity.set(dir.x, dir.y, dir.z) // m/s²
+            worker.postMessage({type: 'updateGravity', payload: {x: dir.x, y: dir.y, z: dir.z}})
+            // world.gravity.set(dir.x, dir.y, dir.z) // m/s²
         }
     }
-    if(!world.stop && !editMode) {
-        // world.Step(1/60, 3, 2)
-        for(let ball of ballSprite) {
-            let pos = ball.body.position
-            ball.position.x = pos.x*phyScale
-            ball.position.y = pos.y*phyScale
-            ball.position.z = pos.z*phyScale
+    // if(!world.stop && !editMode) {
+    //     // world.Step(1/60, 3, 2)
+    //     for(let ball of ballSprite) {
+    //         let pos = ball.body.position
+    //         ball.position.x = pos.x*phyScale
+    //         ball.position.y = pos.y*phyScale
+    //         ball.position.z = pos.z*phyScale
     
-            for(let hole of level.holes.concat(level.holes2)) {
-                let dx = wallLeft + (hole[0]+0.5) * wallLength - ball.x
-                let dy = wallTop + (hole[1]+0.5) * wallLength - ball.y
-                let r = wallLength / 2.7
-                if(dx*dx + dy*dy < r*r) {
-                    for(let ball of ballSprite) {
-                        ball.visible = false
-                    }
-                    stopWorld()
-                    setTimeout(function() {
-                        resetLevel()
-                    }, 2000)
-                    return
-                }
-            }
-        }
-    }
+    //         for(let hole of level.holes.concat(level.holes2)) {
+    //             let dx = wallLeft + (hole[0]+0.5) * wallLength - ball.x
+    //             let dy = wallTop + (hole[1]+0.5) * wallLength - ball.y
+    //             let r = wallLength / 2.7
+    //             if(dx*dx + dy*dy < r*r) {
+    //                 for(let ball of ballSprite) {
+    //                     ball.visible = false
+    //                 }
+    //                 stopWorld()
+    //                 setTimeout(function() {
+    //                     resetLevel()
+    //                 }, 2000)
+    //                 return
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 function stopWorld() {
@@ -760,7 +762,7 @@ function onMouseUp(pos) {
     moveCamera = undefined
     if ( mouseDown && mouseJoint != null ) {
         mouseDown = false
-        world.DestroyJoint(mouseJoint)
+        // world.DestroyJoint(mouseJoint)
         mouseJoint = null
     } else {
         if(editMode) {
@@ -803,15 +805,15 @@ function onMoveCamera(e) {
 function startMouseJoint(pos) {
     if ( mouseJoint != null )
         return
-    let ball = ballSprite[0]
-    let body = ball.body
-    var md = new b2d.b2MouseJointDef()
-    md.set_bodyA(mouseJointGroundBody)
-    md.set_bodyB(body)
-    md.set_target( body.GetPosition() )
-    md.set_maxForce( 100 * body.GetMass() )
-    md.set_collideConnected(true)
+    // let ball = ballSprite[0]
+    // let body = ball.body
+    // var md = new b2d.b2MouseJointDef()
+    // md.set_bodyA(mouseJointGroundBody)
+    // md.set_bodyB(body)
+    // md.set_target( body.GetPosition() )
+    // md.set_maxForce( 100 * body.GetMass() )
+    // md.set_collideConnected(true)
     
-    mouseJoint = b2d.castObject( world.CreateJoint(md), b2d.b2MouseJoint )
-    mouseJoint.SetTarget( new b2d.b2Vec2(pos.x/phyScale, pos.y/phyScale) )
+    // mouseJoint = b2d.castObject( world.CreateJoint(md), b2d.b2MouseJoint )
+    // mouseJoint.SetTarget( new b2d.b2Vec2(pos.x/phyScale, pos.y/phyScale) )
 }
