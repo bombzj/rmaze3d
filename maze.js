@@ -124,10 +124,10 @@ function loadWorld() {
 
         let boxes = []
         for(let c of parent.children) {
-            let g = c.geometry
-            if(g.type == 'BoxGeometry') {
-                c.getWorldPosition(pos)
-                c.getWorldQuaternion(quat)
+            let geometry = c.geometry
+            c.getWorldPosition(pos)
+            c.getWorldQuaternion(quat)
+            if(geometry.type == 'BoxGeometry') {
                 boxes.push({type: 'box',
                 pos: {
                     x: pos.x,
@@ -139,9 +139,9 @@ function loadWorld() {
                     z: quat.z,
                     w: quat.w,
                 }, shape: {
-                    width: g.parameters.width/2,
-                    height: g.parameters.height/2,
-                    depth: g.parameters.depth/2,
+                    width: geometry.parameters.width/2,
+                    height: geometry.parameters.height/2,
+                    depth: geometry.parameters.depth/2,
                 }})
                 // var boxBody = new CANNON.Body({
                 //     mass: 0,
@@ -150,6 +150,61 @@ function loadWorld() {
                 //     quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
                 //  });
                 //  world.addBody(boxBody);
+            } else if(geometry.type == 'BufferGeometry') {
+                let triangles = []
+
+                let posattr = geometry.attributes.position
+                let normalattr = geometry.attributes.normal
+                let uvattr = geometry.attributes.uv
+                let colorattr = geometry.attributes.color
+                let index;
+                if (geometry.index)
+                    index = geometry.index.array;
+                else {
+                    index = new Array((posattr.array.length / posattr.itemSize) | 0);
+                    for (let i = 0; i < index.length; i++)
+                        index[i] = i
+                }
+                let triCount = (index.length / 3) | 0
+                polys = new Array(triCount)
+                for (let i = 0, pli = 0, l = index.length; i < l; i += 3,
+                pli++) {
+                    let vertices = new Array(3)
+                    for (let j = 0; j < 3; j++) {
+                        let vi = index[i + j]
+                        let vp = vi * 3;
+                        let vt = vi * 2;
+                        let x = posattr.array[vp]
+                        let y = posattr.array[vp + 1]
+                        let z = posattr.array[vp + 2]
+                        let nx = normalattr.array[vp]
+                        let ny = normalattr.array[vp + 1]
+                        let nz = normalattr.array[vp + 2]
+                        //let u = uvattr.array[vt]
+                        //let v = uvattr.array[vt + 1]
+                        vertices[j] = {
+                            x,
+                            y,
+                            z
+                        }
+                    }
+                    triangles.push(vertices)
+                }
+
+
+                boxes.push({type: 'mesh',
+                pos: {
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                }, quat: {
+                    x: quat.x,
+                    y: quat.y,
+                    z: quat.z,
+                    w: quat.w,
+                }, triangles: triangles})
+
+
             }
         }
 
@@ -162,7 +217,7 @@ function loadWorld() {
     addExit(wallLeft + (level.exit.x+0.5) * wallLength, wallTop + (level.exit.y+0.5) * wallLength, 10, 10)
     ballSprite = []
     for(let ball of level.ball) {
-        ballSprite.push(addBall(wallLeft + (ball.x+0.5) * wallLength, -wallTop - (ball.y+0.5) * wallLength, tlenh + wallLength/2, 16))
+        ballSprite.push(addBall(wallLeft + (ball.x+0.5) * wallLength, -wallTop - (ball.y+0.5) * wallLength, tlenh + wallLength/2, 15))
     }
 
     for(let line of level.lines) {

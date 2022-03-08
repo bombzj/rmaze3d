@@ -4,7 +4,6 @@ let updateGravityData = null
 let phyScale = 500
 
 var world = new CANNON.World()
-world.gravity.set(0, 0, -9.82) // m/s²
 
 self.onmessage = function(e) {
     const { data } = e
@@ -16,6 +15,27 @@ self.onmessage = function(e) {
         updateMaze(payload)
     } else if(type == 'addBall') {
         addBall(payload)
+    } else if(type == 'start') {
+
+
+        setInterval(loop, 1000/60)
+        let lastTime = Date.now()
+        function loop() {
+            if(updateGravityData) {
+                world.gravity.set(updateGravityData.x, updateGravityData.y, updateGravityData.z)
+                updateGravityData = null
+            }
+            
+            let now = Date.now()
+            world.step(1.0 / 60.0, now - lastTime, 1)
+            lastTime = now
+        
+            if(ballBody) {
+                const {x, y, z} = ballBody.position
+                self.postMessage({type: 'updateBall', payload: {x:x*phyScale, y:y*phyScale, z:z*phyScale}})
+            }
+        }
+
     }
 }
 
@@ -49,20 +69,5 @@ function addBall(data) {
      ballBody = sphereBody
 }
 
-setInterval(loop, 1000/60)
-let lastTime = Date.now()
-function loop() {
-    if(updateGravityData) {
-        world.gravity.set(updateGravityData.x, updateGravityData.y, updateGravityData.z)
-        updateGravityData = null
-    }
-    
-    let now = Date.now()
-    world.step(1.0 / 60.0, now - lastTime, 1)
-    lastTime = now
 
-    if(ballBody) {
-        const {x, y, z} = ballBody.position
-        self.postMessage({type: 'updateBall', payload: {x:x*phyScale, y:y*phyScale, z:z*phyScale}})
-    }
-}
+self.postMessage({ type: 'ready' })

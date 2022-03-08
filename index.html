@@ -7,7 +7,7 @@
         <title>Roling Maze</title>
     </head>
     <script src="three.min.js"></script>
-    <script src="maze.js?v=7"></script>
+    <script src="maze.js?v=8"></script>
     <!-- <script type='module' src="csg-lib.js"></script> -->
     <script src="csg-lib.js"></script>
     <script src="three-csg.js"></script>
@@ -44,9 +44,7 @@
         </div>
         <script>
            'use strict';
-            var beta = 0, gamma = 0
-            let worker = new Worker('workerAmmo.js')
-            
+            var beta = 0, gamma = 0, defaultGravity = -9.82
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera( 25, 1, 10, 2000 )
@@ -110,12 +108,10 @@
                 let a = Math.sin(gamma) * Math.cos(beta)
                 let b = -Math.sin(beta)
                 let c = Math.cos(gamma) * Math.cos(beta)
-                
-                // updateGravity.normalize().multiplyScalar(9.82).negate()
 
                 pivotLight.rotation.set(beta, gamma, 0)
 
-                let updateGravity = new THREE.Vector3(0, 0, -9.82)
+                let updateGravity = new THREE.Vector3(0, 0, defaultGravity)
                 pivotLight.localToWorld(updateGravity)
                 
                 worker.postMessage({
@@ -127,11 +123,32 @@
     })
 
     // var ballTexture
-
+    let worker = null
     window.onload = function() {
+        
+        worker = new Worker('workerAmmo.js?v=2')
+
+
+        worker.onmessage = function(e) {
+            const { data } = e
+            const { type, payload } = data
+            if(type == 'updateBall') {
+                ballSprite[0].position.set(payload.x, payload.y, payload.z)
+                fps2++
+            } else if(type ==='ready') {
+                resetLevel()
+                requestAnimationFrame(loop)
+                worker.postMessage({
+                    type: 'updateGravity',
+                    payload: {x: 0, y: 0, z: defaultGravity}
+                })
+                worker.postMessage({
+                    type: 'start',
+                })
+            }
+        }
+
         init()
-        resetLevel()
-        requestAnimationFrame(loop)
     }
 
     function turnMaze(x, y) {
@@ -208,14 +225,6 @@
             ]
         }
 
-        worker.onmessage = function(e) {
-            const { data } = e
-            const { type, payload } = data
-            if(type == 'updateBall') {
-                ballSprite[0].position.set(payload.x, payload.y, payload.z)
-                fps2++
-            }
-        }
         </script>
     </body>
 </html>
