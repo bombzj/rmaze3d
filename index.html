@@ -7,7 +7,6 @@
         <title>Roling Maze</title>
     </head>
     <script src="three.min.js"></script>
-    <script src="cannon.min.js"></script>
     <script src="maze.js?v=7"></script>
     <!-- <script type='module' src="csg-lib.js"></script> -->
     <script src="csg-lib.js"></script>
@@ -46,7 +45,7 @@
         <script>
            'use strict';
             var beta = 0, gamma = 0
-            let worker = new Worker('worker.js?v=2')
+            let worker = new Worker('workerAmmo.js')
             
 
     const scene = new THREE.Scene()
@@ -217,7 +216,6 @@
                 fps2++
             }
         }
-        worker.postMessage({type:'add'})
         </script>
     </body>
 </html>
