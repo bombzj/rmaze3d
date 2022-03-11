@@ -105,12 +105,6 @@ Ammo().then(function(Ammo) {
     
     function addBall(data) {
         const { x, y, z, r } = data
-        // var sphereBody = new CANNON.Body({
-        //     mass: 0.5, // kg
-        //     position: new CANNON.Vec3(x / phyScale, y / phyScale, z / phyScale), // m
-        //     shape: new CANNON.Sphere(r / phyScale)
-        // });
-        // world.addBody(sphereBody);
 
         var startTransform = new Ammo.btTransform(
             new Ammo.btQuaternion(0, 0, 0, 1),
@@ -148,7 +142,7 @@ Ammo().then(function(Ammo) {
 
         dt = dt || 1;
 
-        dynamicsWorld.stepSimulation(dt, 1);
+        dynamicsWorld.stepSimulation(dt / 1000, 2);
 
         var alpha;
         if (meanDt > 0) {

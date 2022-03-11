@@ -106,14 +106,6 @@ function loadWorld() {
 
         parent.add(addWall(0, 0, tlenh+wallLength+wallWidth, tlen, tlen, wallWidth, 0xffffff, false, false, 0.3))
 
-        // let holes = level.holes
-        // for(let hole of holes) {
-        //     let x = hole[0]
-        //     let y = hole[1]
-        //     let cylinder = addHole(wallLeft + (x+0.5) * wallLength, -wallTop - (y+0.5) * wallLength, tlenh, wallWidth+5, wallLength / 2.7)
-        //     parent.add(cylinder)
-        // }
-
         let r = rotates[sid]
         if(r[4]) {
             parent.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), r[4])
@@ -143,13 +135,6 @@ function loadWorld() {
                     height: geometry.parameters.height/2,
                     depth: geometry.parameters.depth/2,
                 }})
-                // var boxBody = new CANNON.Body({
-                //     mass: 0,
-                //     position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
-                //     shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
-                //     quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
-                //  });
-                //  world.addBody(boxBody);
             } else if(geometry.type == 'BufferGeometry') {
                 let triangles = []
 
@@ -212,30 +197,9 @@ function loadWorld() {
     }
 
 
-
-
-    addExit(wallLeft + (level.exit.x+0.5) * wallLength, wallTop + (level.exit.y+0.5) * wallLength, 10, 10)
     ballSprite = []
     for(let ball of level.ball) {
         ballSprite.push(addBall(wallLeft + (ball.x+0.5) * wallLength, -wallTop - (ball.y+0.5) * wallLength, tlenh + wallLength/2, 15))
-    }
-
-    for(let line of level.lines) {
-        let startPos = line[0]
-        let lineSpirit = new PIXI.Graphics()
-        lineSpirit.lineStyle(2, 0x0)
-        lineSpirit.moveTo(0, 0)
-        let lastPos = startPos
-        for(let pos of line.slice(1)) {
-            let dx = pos.x - startPos.x
-            let dy = pos.y - startPos.y
-            lineSpirit.lineTo(dx, dy)
-            addLineWall(lastPos, pos)
-            lastPos = pos
-        }
-        lineSpirit.x = startPos.x
-        lineSpirit.y = startPos.y
-        app.stage.addChild(lineSpirit)
     }
 
     // world.SetContactListener( listener )
@@ -246,24 +210,6 @@ function loadWorld() {
 
 var listener
 function init() {
-    // listener = new b2d.JSContactListener();
-    // listener.BeginContact = function (contactPtr) {
-    //     var contact = b2d.wrapPointer( contactPtr, b2d.b2Contact )
-    //     var fixtureA = contact.GetFixtureA()
-    //     var fixtureB = contact.GetFixtureB()
-    //     if(fixtureA.isExit) {
-    //         if(fixtureB.isBall) {
-    //             for(let ball of ballSprite) {
-    //                 ball.visible = false
-    //             }
-    //             stopWorld()
-    //             setTimeout(nextLevel, 200)
-    //         }
-    //     }
-    // }
-    // listener.EndContact = function() {}
-    // listener.PreSolve = function() {}
-    // listener.PostSolve = function() {}
 
     window.addEventListener('mousemove', function(e) {
         let pos = {x: e.clientX - renderer.domElement.offsetLeft, y: e.clientY - renderer.domElement.offsetTop}
@@ -342,16 +288,6 @@ function addBall(x, y, z, r) {
     return sphere
 }
 
-function addHiddenWall(x, y, z, w, h, d) {
-    // var boxBody = new CANNON.Body({
-    //     mass: 0,
-    //     position: new CANNON.Vec3(pos.x/phyScale, pos.y/phyScale, pos.z/phyScale), // m
-    //     shape: new CANNON.Box(new CANNON.Vec3(g.parameters.width/2/phyScale,g.parameters.height/2/phyScale,g.parameters.depth/2/phyScale)),
-    //     quaternion: new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
-    // });
-    // world.addBody(boxBody);
-}
-
 function addWall(x, y, z, w, h, d, color = wallColor, castShadow = false, receiveShadow = false, opacity = 1) {
     const geometry = new THREE.BoxGeometry( w, h, d )
     const material = new THREE.MeshPhongMaterial( {color: color, wireframe: wireframe} )
@@ -397,37 +333,6 @@ function addWallHole(x, y, z, z2, w, h, d, d2, color = wallColor, castShadow = f
     return result
 }
 
-function addLineWall(pos1, pos2) {
-    // let x = pos1.x, y = pos1.y
-    // let x2 = pos2.x, y2 = pos2.y
-    // let dx = x2 - x, dy = y2 - y
-    // let shape = new b2d.b2EdgeShape()
-    // shape.Set(new b2d.b2Vec2(0, 0), new b2d.b2Vec2(dx/phyScale, dy/phyScale))
-    // let bd = new b2d.b2BodyDef()
-    // bd.set_position(new b2d.b2Vec2(x/phyScale, y/phyScale))
-    // let body = world.CreateBody(bd)
-    // let fx = body.CreateFixture(shape, 5.0)
-    // fx.isExit = false
-}
-
-function addExit(x, y, w, h) {
-    // let shape = new b2d.b2PolygonShape()
-    // shape.SetAsBox(w/phyScale/2, h/phyScale/2)
-    // let bd = new b2d.b2BodyDef()
-    // bd.set_position(new b2d.b2Vec2(x/phyScale, y/phyScale))
-    // let body = world.CreateBody(bd)
-    // let fx = body.CreateFixture(shape, 5.0)
-    // fx.isExit = true
-
-    // var boundary = new PIXI.Graphics()
-    // boundary.beginFill(0xff0000)
-    // boundary.drawRect(x, y, w, h)
-    // boundary.endFill()
-    // boundary.x = -w/2
-    // boundary.y = -h/2
-    // app.stage.addChild(boundary)
-}
-
 function addHole(x, y, z, d, size, color = 0x0) {
 
     const geometry = new THREE.CylinderGeometry( size, size, d, 16 )
@@ -436,19 +341,9 @@ function addHole(x, y, z, d, size, color = 0x0) {
     cy.rotateX(r90)
     cy.position.set( x, y, z )
     return cy
-
-    // var ball = new PIXI.Graphics()
-    // ball.beginFill(0x0F4F36)
-    // ball.lineStyle(2, 0x0F4F36)
-    // ball.drawCircle(0, 0, size, size)
-    // ball.endFill()
-    // ball.x = x
-    // ball.y = y
-    // app.stage.addChild(ball)
 }
 const vectorZ = new THREE.Vector3(0,0,1)
 function updateWorld() {
-    // camera.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01)
     if(moveCamera) {
         let axis = new THREE.Vector3(moveCamera.x - moveCamera.fromX, -moveCamera.y + moveCamera.fromY, 0)
         let axisLen = axis.length() / 400
@@ -459,41 +354,13 @@ function updateWorld() {
             pivotCamera.rotateOnWorldAxis(axis, axisLen)
             moveCamera.fromX = moveCamera.x
             moveCamera.fromY = moveCamera.y
-            // let lightVector = new THREE.Vector3(1, 1, 2 ).normalize()
-            // pivotCamera.localToWorld(lightVector)
-            // light.position.set(lightVector)
+
             let dir = new THREE.Vector3()
             camera.getWorldDirection(dir)
             dir.multiplyScalar(9.82)
             worker.postMessage({type: 'updateGravity', payload: {x: dir.x, y: dir.y, z: dir.z}})
-            // world.gravity.set(dir.x, dir.y, dir.z) // m/s²
         }
     }
-    // if(!world.stop && !editMode) {
-    //     // world.Step(1/60, 3, 2)
-    //     for(let ball of ballSprite) {
-    //         let pos = ball.body.position
-    //         ball.position.x = pos.x*phyScale
-    //         ball.position.y = pos.y*phyScale
-    //         ball.position.z = pos.z*phyScale
-    
-    //         for(let hole of level.holes.concat(level.holes2)) {
-    //             let dx = wallLeft + (hole[0]+0.5) * wallLength - ball.x
-    //             let dy = wallTop + (hole[1]+0.5) * wallLength - ball.y
-    //             let r = wallLength / 2.7
-    //             if(dx*dx + dy*dy < r*r) {
-    //                 for(let ball of ballSprite) {
-    //                     ball.visible = false
-    //                 }
-    //                 stopWorld()
-    //                 setTimeout(function() {
-    //                     resetLevel()
-    //                 }, 2000)
-    //                 return
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 function stopWorld() {
@@ -787,29 +654,7 @@ function onMouseMove(pos) {
     if ( mouseDown && mouseJoint != null ) {
         mouseJoint.SetTarget( new b2d.b2Vec2(pos.x/phyScale, pos.y/phyScale) );
     } else {
-        if(editMode && lineSteps.length > 0) {
-            let lastPos = lineSteps[lineSteps.length - 1]
-            let startPos = lineSteps[0]
-            let dx = pos.x - lastPos.x
-            let dy = pos.y - lastPos.y
-            let len = 10
-            if(dx*dx + dy*dy > len*len) {
-                lineSteps.push(pos)
-                if(!lineSpirit) {
-                    lineSpirit = new PIXI.Graphics()
-                    lineSpirit.lineStyle(2, 0x0)
-                    lineSpirit.moveTo(0, 0)
-                    lineSpirit.lineTo(dx, dy)
-                    lineSpirit.x = startPos.x
-                    lineSpirit.y = startPos.y
-                    app.stage.addChild(lineSpirit)
-                } else {
-                    lineSpirit.moveTo(lastPos.x - startPos.x, lastPos.y - startPos.y)
-                    lineSpirit.lineTo(pos.x - startPos.x, pos.y - startPos.y)
-                }
-                addLineWall(lineSteps[lineSteps.length - 2], lineSteps[lineSteps.length - 1])
-            }
-        }
+
     }
 }
 
@@ -860,15 +705,4 @@ function onMoveCamera(e) {
 function startMouseJoint(pos) {
     if ( mouseJoint != null )
         return
-    // let ball = ballSprite[0]
-    // let body = ball.body
-    // var md = new b2d.b2MouseJointDef()
-    // md.set_bodyA(mouseJointGroundBody)
-    // md.set_bodyB(body)
-    // md.set_target( body.GetPosition() )
-    // md.set_maxForce( 100 * body.GetMass() )
-    // md.set_collideConnected(true)
-    
-    // mouseJoint = b2d.castObject( world.CreateJoint(md), b2d.b2MouseJoint )
-    // mouseJoint.SetTarget( new b2d.b2Vec2(pos.x/phyScale, pos.y/phyScale) )
 }
