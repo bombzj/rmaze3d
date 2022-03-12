@@ -7,13 +7,6 @@ let r90 = Math.PI / 2
 let wireframe = false
 
 function loadWorld() {
-    // if(world) {
-    //     b2d.destroy(world)
-    //     for( var i = scene.children.length - 1; i >= 0; i--) { 
-    //         obj = scene.children[i];
-    //         scene.remove(obj); 
-    //     }
-    // }
     if(!level.lines) level.lines = []
     if(!level.holes2) level.holes2 = []
 
@@ -32,18 +25,10 @@ function loadWorld() {
     let tlenh = tlen / 2 - wallLength
     wallLeft = -tlen / 2
     wallTop = -tlen / 2
-    // camera.position.set(tlen/2, -tlen/2, 500)
-    // camera.position.set(-00, -00, 1600)
-    // camera.lookAt(0,0,0)
 
     // debug
     // level.ball.x = level.debug.x
     // level.ball.y = level.debug.y
-
-    // addWall(wallLeft + level.column * wallLength/2, wallTop, level.column * wallLength, wallWidth )
-    // addWall(wallLeft + level.column * wallLength/2, wallTop + level.row * wallLength, level.column * wallLength, wallWidth)
-    // addWall(wallLeft + level.column * wallLength, wallTop + level.row * wallLength/2, wallWidth, level.row * wallLength)
-    // addWall(wallLeft, wallTop + level.row * wallLength/2, wallWidth, level.row * wallLength)
     let rotates = [
         [1, 0, 0, 0],
         [0, 1, 0, -r90],
@@ -139,9 +124,6 @@ function loadWorld() {
                 let triangles = []
 
                 let posattr = geometry.attributes.position
-                let normalattr = geometry.attributes.normal
-                let uvattr = geometry.attributes.uv
-                let colorattr = geometry.attributes.color
                 let index;
                 if (geometry.index)
                     index = geometry.index.array;
@@ -162,11 +144,6 @@ function loadWorld() {
                         let x = posattr.array[vp]
                         let y = posattr.array[vp + 1]
                         let z = posattr.array[vp + 2]
-                        let nx = normalattr.array[vp]
-                        let ny = normalattr.array[vp + 1]
-                        let nz = normalattr.array[vp + 2]
-                        //let u = uvattr.array[vt]
-                        //let v = uvattr.array[vt + 1]
                         vertices[j] = {
                             x,
                             y,
@@ -357,7 +334,7 @@ function updateWorld() {
 
             let dir = new THREE.Vector3()
             camera.getWorldDirection(dir)
-            dir.multiplyScalar(9.82)
+            dir.multiplyScalar(defaultGravity)
             worker.postMessage({type: 'updateGravity', payload: {x: dir.x, y: dir.y, z: dir.z}})
         }
     }
@@ -625,21 +602,6 @@ function onMouseDown(pos) {
         || pos.x > wallLeft + level.column * wallLength || pos.y > wallTop + level.row * wallLength) {
             return
         }
-    if(editMode) {
-        // for(let [index,hole] of level.holes.entries()) {
-        //     let dx = hole[0] - pos.x / wallLength
-        //     let dy = hole[0] - pos.y / wallLength
-        //     let r = 0.5
-        //     if(dx*dx + dy*dy < r*r) {
-        //         holes.splice(index, 1)
-        //         break
-        //     }
-        // }
-        lineSteps.push(pos)
-    } else {
-        startMouseJoint(pos)
-        mouseDown = true
-    }
 }
 
 
@@ -651,38 +613,14 @@ function onMouseMove(pos) {
         || pos.x > wallLeft + level.column * wallLength || pos.y > wallTop + level.row * wallLength) {
             return
         }
-    if ( mouseDown && mouseJoint != null ) {
-        mouseJoint.SetTarget( new b2d.b2Vec2(pos.x/phyScale, pos.y/phyScale) );
-    } else {
-
-    }
 }
 
 function onMouseUp(pos) {
     moveCamera = undefined
     if ( mouseDown && mouseJoint != null ) {
         mouseDown = false
-        // world.DestroyJoint(mouseJoint)
         mouseJoint = null
     } else {
-        if(editMode) {
-            if(lineSteps.length > 0) {
-                let len = 20
-                if(lineSteps.length > 1) {  // wall
-                    lineSpirit = null
-                    level.lines.push(lineSteps)
-                    localStorage.setItem("rmaze3"+curLevel, JSON.stringify(level))
-                } else {    // hole
-                    let x = Math.round(pos.x / wallLength - 0.5)
-                    let y = Math.round(pos.y / wallLength - 0.5)
-                    addHole(wallLeft + (x+0.5) * wallLength, wallTop + (y+0.5) * wallLength, wallLength / 2.7)
-                    level.holes2.push([x, y])
-                    localStorage.setItem("rmaze3"+curLevel, JSON.stringify(level))
-                }
-            }
-            lineSteps = []
-
-        }
     }
 }
 
@@ -700,9 +638,4 @@ function onMoveCamera(e) {
         moveCamera.x = e.clientX
         moveCamera.y = e.clientY
     }
-}
-
-function startMouseJoint(pos) {
-    if ( mouseJoint != null )
-        return
 }

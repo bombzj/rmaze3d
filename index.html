@@ -8,13 +8,9 @@
     </head>
     <script src="three.min.js"></script>
     <script src="maze.js?v=8"></script>
-    <!-- <script type='module' src="csg-lib.js"></script> -->
     <script src="csg-lib.js"></script>
     <script src="three-csg.js"></script>
-
     </script>
-
-    <!-- <script type='module' src="three-csg.js"></script> -->
     <style>
         button, select, label, input{
             font-size:20px;
@@ -26,15 +22,6 @@
             <p>
                 <button onclick="DeviceOrientationEvent.requestPermission()">ok</button>
             </p>
-            <!-- <p>
-                <select id="selectLevel" onchange="changeLevel(this.value)"></select>
-            </p>
-            <p>
-                <label><input type="checkbox" onclick="toggleEdit(this.checked)" value="1">Edit</label>
-            </p>
-            <p>
-                <button onclick="clearEdit()">Clear</button>
-            </p> -->
             <p>
                 <button onclick="turnMaze(1, 0)">&lt;</button> <button onclick="turnMaze(-1, 0)">&gt;</button>
             </p>
@@ -44,7 +31,7 @@
         </div>
         <script>
            'use strict';
-            var beta = 0, gamma = 0, defaultGravity = -9.82
+            var beta = 0, gamma = 0, defaultGravity = 9.82
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera( 25, 1, 10, 2000 )
@@ -91,10 +78,6 @@
 
     pivotLight.add( light )
 
-    // var demo = Example.wreckingBall()
-    // demo.engine.gravity.y = 0
-    // demo.engine.gravity.x = -3
-
     window.addEventListener('deviceorientation', function(e) {
         if(worker) {
             if(e.beta != null) {
@@ -111,7 +94,7 @@
 
                 pivotLight.rotation.set(beta, gamma, 0)
 
-                let updateGravity = new THREE.Vector3(0, 0, defaultGravity)
+                let updateGravity = new THREE.Vector3(0, 0, -defaultGravity)
                 pivotLight.localToWorld(updateGravity)
                 
                 worker.postMessage({
@@ -122,7 +105,6 @@
         }
     })
 
-    // var ballTexture
     let worker = null
     window.onload = function() {
         
@@ -140,7 +122,7 @@
                 requestAnimationFrame(loop)
                 worker.postMessage({
                     type: 'updateGravity',
-                    payload: {x: 0, y: 0, z: defaultGravity}
+                    payload: {x: 0, y: 0, z: -defaultGravity}
                 })
                 worker.postMessage({
                     type: 'start',
@@ -166,7 +148,6 @@
 
         if(lastTime !== undefined){
             var t = (dt - lastTime) / 1000;
-            // world.step(1.0 / 60.0, t);
         }
         lastTime = dt;
 
@@ -183,38 +164,8 @@
         requestAnimationFrame(loop);
     }
 
-    // for(let [index, level] of levels.entries()) {
-    //     selectLevel.options.add(new Option('Level ' + (index+1), index));
-    // }
-
-    function changeLevel(index) {
-        curLevel = index
-        level = levels[curLevel]
-        loadWorld()
-    }
-
-    function clearEdit() {
-        level.lines = null
-        level.holes2 = null
-        localStorage.removeItem("rmaze3"+curLevel);
-        loadWorld()
-    }
-
     var ballSprite = []
     var editMode = false
-    function toggleEdit(r) {
-        if(r) {
-            for(let ball of ballSprite) {
-                ball.visible = false
-            }
-        } else {
-            for(let ball of ballSprite) {
-                ball.visible = true
-            }
-        }
-        editMode = r
-    }
-
 
         function turn(x, y, a) {
             let sin = Math.sin(a)
