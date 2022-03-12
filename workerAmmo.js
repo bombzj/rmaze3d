@@ -1,9 +1,7 @@
-var Module = { TOTAL_MEMORY: 512 * 1024 * 1024 };
-
 importScripts('./ammo.js');
 
 let updateGravityData = null
-let phyScale = 500
+let phyScale = 10   // smaller scale cause problem in Ammo.js
 
 
 function updateGravity(data) {
@@ -123,6 +121,8 @@ Ammo().then(function(Ammo) {
 
         dynamicsWorld.addRigidBody(body);
         body.activate()
+        body.setCcdMotionThreshold(r / phyScale);
+        // body.setCcdSweptSphereRadius(r / phyScale);
         ballBody = body
     }
 

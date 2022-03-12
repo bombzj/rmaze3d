@@ -31,7 +31,7 @@
         </div>
         <script>
            'use strict';
-            var beta = 0, gamma = 0, defaultGravity = 9.82
+            var beta = 0, gamma = 0, defaultGravity = 9.82*80   // smaller scale cause problem in Ammo.js
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera( 25, 1, 10, 2000 )
@@ -46,7 +46,10 @@
     scene.add( pivotCamera )
 
     const renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize( 600, 600 )
+    let windowSize = 600
+    if(windowSize > window.innerWidth) windowSize = window.innerWidth
+    if(windowSize > window.innerHeight) windowSize = window.innerHeight
+    renderer.setSize( windowSize, windowSize )
     renderer.shadowMap.enabled = true
     renderer.shadowMapSoft = true
     // renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -81,16 +84,13 @@
     window.addEventListener('deviceorientation', function(e) {
         if(worker) {
             if(e.beta != null) {
-                let beta = e.beta / 180 * Math.PI
-                let gamma = e.gamma / 180 * Math.PI
+                let beta = -e.beta / 180 * Math.PI
+                let gamma = -e.gamma / 180 * Math.PI
                 if(window.orientation) {
                     let res = turn(gamma, beta, window.orientation / 180 * Math.PI)
-                    gamma = -res[0]
-                    beta = -res[1]
+                    gamma = res[0]
+                    beta = res[1]
                 }
-                let a = Math.sin(gamma) * Math.cos(beta)
-                let b = -Math.sin(beta)
-                let c = Math.cos(gamma) * Math.cos(beta)
 
                 pivotLight.rotation.set(beta, gamma, 0)
 
@@ -108,7 +108,7 @@
     let worker = null
     window.onload = function() {
         
-        worker = new Worker('workerAmmo.js?v=2')
+        worker = new Worker('workerAmmo.js?v=3')
 
 
         worker.onmessage = function(e) {
@@ -116,6 +116,7 @@
             const { type, payload } = data
             if(type == 'updateBall') {
                 ballSprite[0].position.set(payload.x, payload.y, payload.z)
+                autoTurnMaze(payload)
                 fps2++
             } else if(type ==='ready') {
                 resetLevel()
@@ -139,6 +140,48 @@
         pivotCamera.rotateX(y)
         pivotCamera.rotateY(x)
     }
+
+
+    let autoTurnCounter = 0, autoTurnAngleX, autoTurnAngleY, autoTurnSpeed = 40
+    function autoTurnMaze(bp) {
+        let pos = new THREE.Vector3(bp.x, bp.y, bp.z)
+        pivotCamera.worldToLocal(pos)
+        let tlen = (level.column - 2) * wallLength / 2
+        if(autoTurnCounter == 0 && pos.z < tlen) {
+            if(pos.x < -tlen) {
+                autoTurnCounter = autoTurnSpeed
+                autoTurnAngleX = 0
+                autoTurnAngleY = -r90 / autoTurnCounter
+            } else if(pos.x > tlen) {
+                autoTurnCounter = autoTurnSpeed
+                autoTurnAngleX = 0
+                autoTurnAngleY = r90 / autoTurnCounter
+            } else if(pos.y < -tlen) {
+                autoTurnCounter = autoTurnSpeed
+                autoTurnAngleX = r90 / autoTurnCounter
+                autoTurnAngleY = 0
+            } else if(pos.y > tlen) {
+                autoTurnCounter = autoTurnSpeed
+                autoTurnAngleX = -r90 / autoTurnCounter
+                autoTurnAngleY = 0
+            } else if(pos.z < -tlen) {
+                autoTurnCounter = autoTurnSpeed * 2
+                autoTurnAngleX = -r90 / autoTurnCounter
+                autoTurnAngleY = 0
+            }
+            if(autoTurnCounter != 0) {
+                let si = setInterval(() => {
+                    if(autoTurnAngleX != 0) pivotCamera.rotateX(autoTurnAngleX)
+                    if(autoTurnAngleY != 0) pivotCamera.rotateY(autoTurnAngleY)
+                    autoTurnCounter--
+                    if(autoTurnCounter <= 0) {
+                        clearInterval(si)
+                    }
+                }, 20);
+            }
+        }
+    }
+
 
     var lastTime;
     var lastTimeFps = 0
@@ -169,7 +212,7 @@
 
         function turn(x, y, a) {
             let sin = Math.sin(a)
-            let cos = Math.cos(a)
+            let cos = -Math.cos(a)
             return [
                 -x * cos + y * sin,
                 -x * sin - y * cos,
