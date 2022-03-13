@@ -31,7 +31,7 @@
         </div>
         <script>
            'use strict';
-            var beta = 0, gamma = 0, defaultGravity = 9.82*80   // smaller scale cause problem in Ammo.js
+            var beta = 0, gamma = 0, defaultGravity = 9.82*100   // smaller scale cause problem in Ammo.js
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera( 25, 1, 10, 2000 )
@@ -142,7 +142,7 @@
     }
 
 
-    let autoTurnCounter = 0, autoTurnAngleX, autoTurnAngleY, autoTurnSpeed = 40
+    let autoTurnCounter = 0, autoTurnAngleX, autoTurnAngleY, autoTurnSpeed = 45
     function autoTurnMaze(bp) {
         let pos = new THREE.Vector3(bp.x, bp.y, bp.z)
         pivotCamera.worldToLocal(pos)
@@ -165,8 +165,8 @@
                 autoTurnAngleX = -r90 / autoTurnCounter
                 autoTurnAngleY = 0
             } else if(pos.z < -tlen) {
-                autoTurnCounter = autoTurnSpeed * 2
-                autoTurnAngleX = -r90 / autoTurnCounter
+                autoTurnCounter = autoTurnSpeed
+                autoTurnAngleX = -r90 * 2 / autoTurnCounter
                 autoTurnAngleY = 0
             }
             if(autoTurnCounter != 0) {

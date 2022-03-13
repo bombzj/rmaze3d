@@ -122,7 +122,7 @@ Ammo().then(function(Ammo) {
         dynamicsWorld.addRigidBody(body);
         body.activate()
         body.setCcdMotionThreshold(r / phyScale);
-        // body.setCcdSweptSphereRadius(r / phyScale);
+        body.setCcdSweptSphereRadius(r / phyScale);
         ballBody = body
     }
 
